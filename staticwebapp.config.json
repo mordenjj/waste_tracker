@@ -3,7 +3,7 @@
     {
       "route": "/api/*",
       "redirect": "https://REPLACE_WITH_BACKEND_URL/api/*",
-      "statusCode": 308
+      "statusCode": 301
     }
   ],
   "navigationFallback": {
