@@ -39,7 +39,7 @@ type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
  * @summary Health check
  */
 export const getHealthCheckUrl = () => {
-  return `/api/healthz`;
+  return `/healthz`;
 };
 
 export const healthCheck = async (
@@ -52,7 +52,7 @@ export const healthCheck = async (
 };
 
 export const getHealthCheckQueryKey = () => {
-  return [`/api/healthz`] as const;
+  return [`/healthz`] as const;
 };
 
 export const getHealthCheckQueryOptions = <
@@ -126,8 +126,8 @@ export const getListWasteEventsUrl = (params?: ListWasteEventsParams) => {
   const stringifiedParams = normalizedParams.toString();
 
   return stringifiedParams.length > 0
-    ? `/api/waste-events?${stringifiedParams}`
-    : `/api/waste-events`;
+    ? `/waste-events?${stringifiedParams}`
+    : `/waste-events`;
 };
 
 export const listWasteEvents = async (
@@ -141,7 +141,7 @@ export const listWasteEvents = async (
 };
 
 export const getListWasteEventsQueryKey = (params?: ListWasteEventsParams) => {
-  return [`/api/waste-events`, ...(params ? [params] : [])] as const;
+  return [`/waste-events`, ...(params ? [params] : [])] as const;
 };
 
 export const getListWasteEventsQueryOptions = <
@@ -210,7 +210,7 @@ export function useListWasteEvents<
  * @summary Create a waste event
  */
 export const getCreateWasteEventUrl = () => {
-  return `/api/waste-events`;
+  return `/waste-events`;
 };
 
 export const createWasteEvent = async (
@@ -310,8 +310,8 @@ export const getGetWasteEventsSummaryUrl = (
   const stringifiedParams = normalizedParams.toString();
 
   return stringifiedParams.length > 0
-    ? `/api/waste-events/summary?${stringifiedParams}`
-    : `/api/waste-events/summary`;
+    ? `/waste-events/summary?${stringifiedParams}`
+    : `/waste-events/summary`;
 };
 
 export const getWasteEventsSummary = async (
@@ -327,7 +327,7 @@ export const getWasteEventsSummary = async (
 export const getGetWasteEventsSummaryQueryKey = (
   params?: GetWasteEventsSummaryParams,
 ) => {
-  return [`/api/waste-events/summary`, ...(params ? [params] : [])] as const;
+  return [`/waste-events/summary`, ...(params ? [params] : [])] as const;
 };
 
 export const getGetWasteEventsSummaryQueryOptions = <
