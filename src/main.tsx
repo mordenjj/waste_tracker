@@ -34,10 +34,8 @@ setBaseUrl(baseUrl);
 // 3. Render the App
 createRoot(document.getElementById("root")!).render(<App />);
 
-// Add this to your main.tsx where you set the token
+// This version returns the key, which the library uses for Authorization,
+// but we need to ensure the underlying fetch also sees 'apikey'.
 setAuthTokenGetter(() => {
-  const key = import.meta.env.VITE_SUPABASE_ANON_KEY;
-  // This is a bit of a hack, but if the library allows it, 
-  // it might help attach the necessary credentials.
-  return key; 
+  return import.meta.env.VITE_SUPABASE_ANON_KEY || null;
 });
