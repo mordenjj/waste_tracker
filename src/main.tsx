@@ -6,7 +6,7 @@ import "./index.css";
 // We set the base URL to just the root. 
 // If the generated code adds "/api/waste-events", 
 // this will result in: ...supabase.co/api/waste-events
-const baseUrl = import.meta.env.VITE_API_BASE_URL || "https://xrtlypmydsttczyysdfm.supabase.co";
+const baseUrl = import.meta.env.VITE_API_BASE_URL || "https://xrtlypmydsttczyysdfm.supabase.co/rest/v1";
 setBaseUrl(baseUrl);
 
 // This ensures the token is passed for both Authorization and 'apikey' headers
