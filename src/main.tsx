@@ -29,7 +29,15 @@ setBaseUrl(baseUrl);
 
 // 2. Pass the API Key (The ID Badge)
 // This tells the app to use the Anon Key for every request to stop the 401 errors.
-setAuthTokenGetter(() => import.meta.env.VITE_SUPABASE_ANON_KEY || null);
+//setAuthTokenGetter(() => import.meta.env.VITE_SUPABASE_ANON_KEY || null);
 
 // 3. Render the App
 createRoot(document.getElementById("root")!).render(<App />);
+
+// Add this to your main.tsx where you set the token
+setAuthTokenGetter(() => {
+  const key = import.meta.env.VITE_SUPABASE_ANON_KEY;
+  // This is a bit of a hack, but if the library allows it, 
+  // it might help attach the necessary credentials.
+  return key; 
+});
