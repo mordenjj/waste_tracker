@@ -298,16 +298,12 @@ export const useCreateWasteEvent = <
  * Returns aggregated waste data for analytics
  * @summary Get waste analytics summary
  */
-export const getGetWasteEventsSummaryUrl = (
-  params?: GetWasteEventsSummaryParams,
-) => {
-  const normalizedParams = new URLSearchParams();
-
-  Object.entries(params || {}).forEach(([key, value]) => {
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? "null" : value.toString());
-    }
-  });
+export const getGetWasteEventsSummaryUrl = (params?: GetWasteEventsSummaryParams) => {
+  // ... existing param logic ...
+  return stringifiedParams.length > 0
+    ? `/waste_events_summary?${stringifiedParams}` // Changed / to _
+    : `/waste_events_summary`;
+};
 
   const stringifiedParams = normalizedParams.toString();
 
