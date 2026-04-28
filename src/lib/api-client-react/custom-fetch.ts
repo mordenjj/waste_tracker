@@ -249,8 +249,12 @@ if (method === "GET" && resolvedUrl.includes("?")) {
   
   params.forEach((value, key) => {
     if (!value.includes(".")) {
-      // DATE LOGIC: If the key is 'from', use 'gte' (Greater Than or Equal)
-      // If the key is 'to', use 'lte' (Less Than or Equal)
+      // If it's the summary endpoint, we treat 'from' and 'to' as special
+      // We skip adding the operator for these to avoid the 400 error on the View
+      if (resolvedUrl.includes('/summary') && (key === 'from' || key === 'to')) {
+        return; 
+      }
+      
       if (key === 'from') {
         params.set(key, `gte.${value}`);
       } else if (key === 'to') {
@@ -260,8 +264,6 @@ if (method === "GET" && resolvedUrl.includes("?")) {
       }
     }
   });
-  resolvedUrl = `${path}?${params.toString()}`;
-}
 
   // 3. Apply Base URL to our modified path
   const finalInput = applyBaseUrl(resolvedUrl);
