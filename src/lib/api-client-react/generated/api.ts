@@ -125,7 +125,6 @@ export const getListWasteEventsUrl = (params?: ListWasteEventsParams) => {
 
   const stringifiedParams = normalizedParams.toString();
 
-  // Updated to point to your new table name
   return stringifiedParams.length > 0
     ? `/waste-events?${stringifiedParams}`
     : `/waste-events`;
@@ -211,7 +210,6 @@ export function useListWasteEvents<
  * @summary Create a waste event
  */
 export const getCreateWasteEventUrl = () => {
-  // Updated to point to your new table name
   return `/waste-events`;
 };
 
@@ -298,16 +296,19 @@ export const useCreateWasteEvent = <
  * Returns aggregated waste data for analytics
  * @summary Get waste analytics summary
  */
-export const getGetWasteEventsSummaryUrl = (params?: GetWasteEventsSummaryParams) => {
-  // ... existing param logic ...
-  return stringifiedParams.length > 0
-    ? `/waste_events_summary?${stringifiedParams}` // Changed / to _
-    : `/waste_events_summary`;
-};
+export const getGetWasteEventsSummaryUrl = (
+  params?: GetWasteEventsSummaryParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
 
   const stringifiedParams = normalizedParams.toString();
 
-  // Updated to point to your new SQL View
   return stringifiedParams.length > 0
     ? `/waste-events/summary?${stringifiedParams}`
     : `/waste-events/summary`;
