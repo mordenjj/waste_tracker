@@ -242,18 +242,26 @@ export async function customFetch<T = unknown>(
   const { responseType = "auto", headers: headersInit, ...init } = options;
   const method = resolveMethod(input, init.method);
 
-  // 2. Supabase/PostgREST Filter Fix: Convert ?key=value to ?key=eq.value
-  if (method === "GET" && resolvedUrl.includes("?")) {
-    const [path, query] = resolvedUrl.split("?");
-    const params = new URLSearchParams(query);
-    params.forEach((value, key) => {
-      // Only append eq. if it doesn't already have a PostgREST operator
-      if (!value.includes(".")) {
+  // Find the logic we added earlier and replace it with this:
+if (method === "GET" && resolvedUrl.includes("?")) {
+  const [path, query] = resolvedUrl.split("?");
+  const params = new URLSearchParams(query);
+  
+  params.forEach((value, key) => {
+    if (!value.includes(".")) {
+      // DATE LOGIC: If the key is 'from', use 'gte' (Greater Than or Equal)
+      // If the key is 'to', use 'lte' (Less Than or Equal)
+      if (key === 'from') {
+        params.set(key, `gte.${value}`);
+      } else if (key === 'to') {
+        params.set(key, `lte.${value}`);
+      } else {
         params.set(key, `eq.${value}`);
       }
-    });
-    resolvedUrl = `${path}?${params.toString()}`;
-  }
+    }
+  });
+  resolvedUrl = `${path}?${params.toString()}`;
+}
 
   // 3. Apply Base URL to our modified path
   const finalInput = applyBaseUrl(resolvedUrl);
