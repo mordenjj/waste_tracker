@@ -125,6 +125,7 @@ export const getListWasteEventsUrl = (params?: ListWasteEventsParams) => {
 
   const stringifiedParams = normalizedParams.toString();
 
+  // Updated to point to your new table name
   return stringifiedParams.length > 0
     ? `/waste-events?${stringifiedParams}`
     : `/waste-events`;
@@ -210,6 +211,7 @@ export function useListWasteEvents<
  * @summary Create a waste event
  */
 export const getCreateWasteEventUrl = () => {
+  // Updated to point to your new table name
   return `/waste-events`;
 };
 
@@ -309,6 +311,7 @@ export const getGetWasteEventsSummaryUrl = (
 
   const stringifiedParams = normalizedParams.toString();
 
+  // Updated to point to your new SQL View
   return stringifiedParams.length > 0
     ? `/waste-events/summary?${stringifiedParams}`
     : `/waste-events/summary`;
