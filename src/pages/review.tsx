@@ -17,17 +17,19 @@ const DATE_PRESETS: { label: string; value: DatePreset }[] = [
   { label: "All time", value: "all" },
 ];
 
-function getDateRange(preset: DatePreset): { from?: string; to?: string } {
+function getDateRange(preset: DatePreset): { recordedAt?: string[] } {
   const now = new Date();
-  if (preset === "7days") {
-    return { from: startOfDay(subDays(now, 7)).toISOString(), to: now.toISOString() };
-  }
-  if (preset === "30days") {
-    return { from: startOfDay(subDays(now, 30)).toISOString(), to: now.toISOString() };
-  }
-  if (preset === "90days") {
-    return { from: startOfDay(subDays(now, 90)).toISOString(), to: now.toISOString() };
-  }
+  
+  // We use the actual column name 'recordedAt' as the key
+  const formatRange = (days: number) => [
+    `gte.${startOfDay(subDays(now, days)).toISOString()}`,
+    `lte.${now.toISOString()}`
+  ];
+
+  if (preset === "7days") return { recordedAt: formatRange(7) };
+  if (preset === "30days") return { recordedAt: formatRange(30) };
+  if (preset === "90days") return { recordedAt: formatRange(90) };
+  
   return {};
 }
 
