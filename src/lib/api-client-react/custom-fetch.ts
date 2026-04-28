@@ -247,24 +247,24 @@ export async function customFetch<T = unknown>(
     const [path, query] = resolvedUrl.split("?");
     const params = new URLSearchParams(query);
     
-    params.forEach((value, key) => {
-      if (!value.includes(".")) {
-        // Handle summary view specifics
-        if (resolvedUrl.includes('/summary') && (key === 'from' || key === 'to')) {
-          return; 
-        }
-        
-        if (key === 'from') {
-          params.set(key, `gte.${value}`);
-        } else if (key === 'to') {
-          params.set(key, `lte.${value}`);
-        } else {
-          params.set(key, `eq.${value}`);
-        }
-      }
-    });
-    resolvedUrl = `${path}?${params.toString()}`;
+    params.forEach((val, key) => {
+  const value = String(val);
+  if (value.includes(".")) return; // Already has a PostgREST operator
+
+  // Handle the specific naming mismatch for Supabase
+  if (key === 'from') {
+    params.set(key, `gte.${value}`);
+  } else if (key === 'to') {
+    params.set(key, `lte.${value}`);
+  } else if (key === 'station' || key === 'wasteReason') {
+    params.set(key, `eq.${value}`);
+  } else if (key === 'recordedAt') {
+    // If the history page is sending 'recordedAt', handle it like 'from'
+    params.set(key, `gte.${value}`);
+  } else {
+    params.set(key, `eq.${value}`);
   }
+});
 
   // 3. Apply Base URL to our modified path
   const finalInput = applyBaseUrl(resolvedUrl);
