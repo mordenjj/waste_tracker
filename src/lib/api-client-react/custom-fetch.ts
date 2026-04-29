@@ -9,13 +9,8 @@ export type AuthTokenGetter = () => Promise<string | null> | string | null;
 let _baseUrl: string | null = null;
 let _authTokenGetter: AuthTokenGetter | null = null;
 
-export function setBaseUrl(url: string | null): void {
-  _baseUrl = url ? url.replace(/\/+$/, "") : null;
-}
-
-export function setAuthTokenGetter(getter: AuthTokenGetter | null): void {
-  _authTokenGetter = getter;
-}
+export function setBaseUrl(url: string | null): void { _baseUrl = url; }
+export function setAuthTokenGetter(getter: AuthTokenGetter | null): void { _authTokenGetter = getter; }
 
 export class ApiError<T = unknown> extends Error {
   readonly status: number;
@@ -31,48 +26,37 @@ export async function customFetch<T = unknown>(
   input: RequestInfo | URL,
   options: CustomFetchOptions = {},
 ): Promise<T> {
-  // 1. Resolve the raw URL string
   let url = typeof input === "string" ? input : (input instanceof URL ? input.toString() : input.url);
-  const { responseType: _rt, headers: headersInit, ...init } = options;
+  const { headers: headersInit, ...init } = options;
   const method = init.method?.toUpperCase() || "GET";
 
-  // 2. PATH INTERCEPTOR: Fix the 404 for analytics
+  // 1. Path Fix
   if (url.includes("/waste-events/summary")) {
     url = url.replace("/waste-events/summary", "/waste_events_summary");
   }
 
-  // 3. PARAMETER INTERCEPTOR: Fix the 400 for date filters
+  // 2. Filter Fix (The "Translator")
   if (method === "GET" && url.includes("?")) {
     const [path, query] = url.split("?");
     const oldParams = new URLSearchParams(query);
     const newParams = new URLSearchParams();
 
     oldParams.forEach((value, key) => {
-      // If the URL already has a dot (e.g., eq. station), keep it
       if (value.includes(".")) {
         newParams.append(key, value);
-        return;
-      }
-
-      // MAP 'from' and 'to' to the actual database column 'recordedAt'
-      if (key === 'from') {
+      } else if (key === 'from') {
         newParams.append('recordedAt', `gte.${value}`);
       } else if (key === 'to') {
         newParams.append('recordedAt', `lte.${value}`);
       } else {
-        // Map other filters (station, reason) to standard equality
         newParams.append(key, `eq.${value}`);
       }
     });
     url = `${path}?${newParams.toString()}`;
   }
 
-  // 4. Construct Final Absolute URL
-  const base = (_baseUrl || "").replace(/\/+$/, "");
-  const cleanPath = url.startsWith("/") ? url : `/${url}`;
-  const finalUrl = url.startsWith("http") ? url : `${base}${cleanPath}`;
-
-  // 5. Auth & Supabase Headers
+  // 3. Auth and Execution
+  const finalUrl = url.startsWith("http") ? url : `${(_baseUrl || "").replace(/\/+$/, "")}/${url.replace(/^\/+/, "")}`;
   const headers = new Headers(headersInit);
   if (_authTokenGetter) {
     const token = await _authTokenGetter();
@@ -83,14 +67,9 @@ export async function customFetch<T = unknown>(
   }
 
   const response = await fetch(finalUrl, { ...init, method, headers });
-
-  // 6. Parsing
   const text = await response.text();
   const data = text ? JSON.parse(text) : null;
 
-  if (!response.ok) {
-    throw new ApiError(response, data, finalUrl);
-  }
-
+  if (!response.ok) throw new ApiError(response, data, finalUrl);
   return data as T;
 }
