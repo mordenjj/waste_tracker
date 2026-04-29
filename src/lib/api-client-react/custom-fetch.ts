@@ -30,13 +30,13 @@ export async function customFetch<T = unknown>(
   const { headers: headersInit, ...init } = options;
   const method = init.method?.toUpperCase() || "GET";
 
-  // 1. Path Redirection
+  // 1. Path Redirection for Analytics
   const isSummary = url.includes("/waste-events/summary");
   if (isSummary) {
     url = url.replace("/waste-events/summary", "/waste_events_summary");
   }
 
-  // 2. Filter Translation (Fixes the 400 errors)
+  // 2. Translate filters from frontend (from/to) to Supabase (recordedAt + operators)
   if (method === "GET" && url.includes("?")) {
     const [path, query] = url.split("?");
     const params = new URLSearchParams(query);
@@ -46,7 +46,6 @@ export async function customFetch<T = unknown>(
       const value = String(val);
       if (value.includes(".")) { translated.append(key, value); return; }
       
-      // Map frontend 'from' and 'to' to backend 'recordedAt'
       if (key === 'from') translated.append('recordedAt', `gte.${value}`);
       else if (key === 'to') translated.append('recordedAt', `lte.${value}`);
       else translated.append(key, `eq.${value}`);
@@ -54,9 +53,7 @@ export async function customFetch<T = unknown>(
     url = `${path}?${translated.toString()}`;
   }
 
-  // 3. Auth and Headers
-  const base = (_baseUrl || "").replace(/\/+$/, "");
-  const finalUrl = url.startsWith("http") ? url : `${base}/${url.replace(/^\/+/, "")}`;
+  const finalUrl = url.startsWith("http") ? url : `${(_baseUrl || "").replace(/\/+$/, "")}/${url.replace(/^\/+/, "")}`;
   const headers = new Headers(headersInit);
 
   if (_authTokenGetter) {
@@ -67,7 +64,7 @@ export async function customFetch<T = unknown>(
     }
   }
 
-  // FIX: Force Supabase to return a single object, not an array
+  // Tell Supabase to return an object instead of an array for summary requests
   if (isSummary) {
     headers.set("Accept", "application/vnd.pgrst.object+json");
   }
