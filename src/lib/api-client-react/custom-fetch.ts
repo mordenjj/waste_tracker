@@ -26,39 +26,41 @@ export async function customFetch<T = unknown>(
   input: RequestInfo | URL,
   options: CustomFetchOptions = {},
 ): Promise<T> {
-  let url = typeof input === "string" ? input : (input instanceof URL ? input.toString() : input.url);
+  let urlStr = typeof input === "string" ? input : (input instanceof URL ? input.toString() : input.url);
   const { headers: headersInit, ...init } = options;
   const method = init.method?.toUpperCase() || "GET";
 
-  // 1. Path Redirection for Analytics
-  const isSummary = url.includes("/waste-events/summary");
+  // 1. Path & Parameter Transformation
+  const isSummary = urlStr.includes("/waste-events/summary");
   if (isSummary) {
-    url = url.replace("/waste-events/summary", "/waste_events_summary");
+    urlStr = urlStr.replace("/waste-events/summary", "/waste_events_summary");
   }
 
-  // 2. Logic Fix: Translate 'from'/'to' to 'recordedAt' filters
-  if (method === "GET" && url.includes("?")) {
-    const [path, query] = url.split("?");
-    const params = new URLSearchParams(query);
-    const translated = new URLSearchParams();
+  if (method === "GET" && urlStr.includes("?")) {
+    const [path, query] = urlStr.split("?");
+    const oldParams = new URLSearchParams(query);
+    const newParams = new URLSearchParams();
 
-    params.forEach((val, key) => {
-      const value = String(val);
-      if (value.includes(".")) { translated.append(key, value); return; }
-      
-      if (key === 'from') translated.append('recordedAt', `gte.${value}`);
-      else if (key === 'to') translated.append('recordedAt', `lte.${value}`);
-      else translated.append(key, `eq.${value}`);
+    oldParams.forEach((value, key) => {
+      if (value.includes(".")) {
+        newParams.append(key, value);
+      } else if (key === 'from') {
+        newParams.append('recordedAt', `gte.${value}`);
+      } else if (key === 'to') {
+        newParams.append('recordedAt', `lte.${value}`);
+      } else {
+        newParams.append(key, `eq.${value}`);
+      }
     });
-    url = `${path}?${translated.toString()}`;
+    urlStr = `${path}?${newParams.toString()}`;
   }
 
-  // 3. Construct Final URL
+  // 2. Build Final Absolute URL
   const base = (_baseUrl || "").replace(/\/+$/, "");
-  const cleanPath = url.startsWith("/") ? url : `/${url}`;
-  const finalUrl = url.startsWith("http") ? url : `${base}${cleanPath}`;
+  const cleanPath = urlStr.startsWith("/") ? urlStr : `/${urlStr}`;
+  const finalUrl = urlStr.startsWith("http") ? urlStr : `${base}${cleanPath}`;
 
-  // 4. Headers & Auth
+  // 3. Set Headers
   const headers = new Headers(headersInit);
   if (_authTokenGetter) {
     const token = await _authTokenGetter();
@@ -68,7 +70,7 @@ export async function customFetch<T = unknown>(
     }
   }
 
-  // Force single object return for the summary view
+  // Mandatory header for single-row View returns
   if (isSummary) {
     headers.set("Accept", "application/vnd.pgrst.object+json");
   }
