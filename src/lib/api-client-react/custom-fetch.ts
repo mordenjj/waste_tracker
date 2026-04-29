@@ -242,7 +242,7 @@ export async function customFetch<T = unknown>(
   const { responseType = "auto", headers: headersInit, ...init } = options;
   const method = resolveMethod(input, init.method);
 
-  // 2. Interceptor: Force the 404 hyphen path to the working underscore path
+  // 2. Interceptor: Redirect hyphen path to underscore path
   if (resolvedUrl.includes("/waste-events/summary")) {
     resolvedUrl = resolvedUrl.replace("/waste-events/summary", "/waste_events_summary");
   }
@@ -253,14 +253,16 @@ export async function customFetch<T = unknown>(
     const params = new URLSearchParams(query);
     
     params.forEach((value, key) => {
-      // Skip if already contains a PostgREST operator (contains a dot)
+      // Skip if already contains a PostgREST operator
       if (typeof value === 'string' && value.includes(".")) return;
       
-      // Map 'from/to' to specific Supabase operators
+      // Map 'from/to' to recordedAt for filtering
       if (key === 'from') {
-        params.set(key, `gte.${value}`);
+        params.set('recordedAt', `gte.${value}`);
+        params.delete('from');
       } else if (key === 'to') {
-        params.set(key, `lte.${value}`);
+        params.append('recordedAt', `lte.${value}`);
+        params.delete('to');
       } else {
         params.set(key, `eq.${value}`);
       }
@@ -271,34 +273,33 @@ export async function customFetch<T = unknown>(
   // 4. Apply Base URL to our modified path
   const finalInput = applyBaseUrl(resolvedUrl);
 
-  if (init.body != null && (method === "GET" || method === "HEAD")) {
+  if (init.body != null && (method === "GET" || method === \"HEAD\")) {
     throw new TypeError(`customFetch: ${method} requests cannot have a body.`);
   }
 
   // 5. Merge Headers and Auth
   const headers = mergeHeaders(isRequest(input) ? input.headers : undefined, headersInit);
 
-  if (typeof init.body === "string" && !headers.has("content-type") && looksLikeJson(init.body)) {
-    headers.set("content-type", "application/json");
+  if (typeof init.body === \"string\" && !headers.has(\"content-type\") && looksLikeJson(init.body)) {
+    headers.set(\"content-type\", \"application/json\");
   }
 
-  if (responseType === "json" && !headers.has("accept")) {
-    headers.set("accept", DEFAULT_JSON_ACCEPT);
+  if (responseType === \"json\" && !headers.has(\"accept\")) {
+    headers.set(\"accept\", DEFAULT_JSON_ACCEPT);
   }
 
-  // 6. Auth and Supabase specific headers
   if (_authTokenGetter) {
     const token = await _authTokenGetter();
     if (token) {
       // SUPABASE REQUIRES BOTH OF THESE:
-      headers.set("apikey", token);
-      headers.set("Authorization", `Bearer ${token}`);
+      headers.set(\"apikey\", token);
+      headers.set(\"Authorization\", `Bearer ${token}`);
     }
   }
-  
+
   const requestInfo = { method, url: resolvedUrl };
 
-  // 7. Execute Fetch
+  // 6. Execute Fetch
   const response = await fetch(finalInput, { ...init, method, headers });
 
   if (!response.ok) {
