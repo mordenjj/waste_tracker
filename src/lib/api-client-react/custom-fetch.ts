@@ -30,40 +30,46 @@ export async function customFetch<T = unknown>(
   const { headers: headersInit, ...init } = options;
   const method = init.method?.toUpperCase() || "GET";
 
-  // 1. Path Fix
-  if (url.includes("/waste-events/summary")) {
+  // 1. Path Redirection
+  const isSummary = url.includes("/waste-events/summary");
+  if (isSummary) {
     url = url.replace("/waste-events/summary", "/waste_events_summary");
   }
 
-  // 2. Filter Fix (The "Translator")
+  // 2. Filter Translation (Fixes the 400 errors)
   if (method === "GET" && url.includes("?")) {
     const [path, query] = url.split("?");
-    const oldParams = new URLSearchParams(query);
-    const newParams = new URLSearchParams();
+    const params = new URLSearchParams(query);
+    const translated = new URLSearchParams();
 
-    oldParams.forEach((value, key) => {
-      if (value.includes(".")) {
-        newParams.append(key, value);
-      } else if (key === 'from') {
-        newParams.append('recordedAt', `gte.${value}`);
-      } else if (key === 'to') {
-        newParams.append('recordedAt', `lte.${value}`);
-      } else {
-        newParams.append(key, `eq.${value}`);
-      }
+    params.forEach((val, key) => {
+      const value = String(val);
+      if (value.includes(".")) { translated.append(key, value); return; }
+      
+      // Map frontend 'from' and 'to' to backend 'recordedAt'
+      if (key === 'from') translated.append('recordedAt', `gte.${value}`);
+      else if (key === 'to') translated.append('recordedAt', `lte.${value}`);
+      else translated.append(key, `eq.${value}`);
     });
-    url = `${path}?${newParams.toString()}`;
+    url = `${path}?${translated.toString()}`;
   }
 
-  // 3. Auth and Execution
-  const finalUrl = url.startsWith("http") ? url : `${(_baseUrl || "").replace(/\/+$/, "")}/${url.replace(/^\/+/, "")}`;
+  // 3. Auth and Headers
+  const base = (_baseUrl || "").replace(/\/+$/, "");
+  const finalUrl = url.startsWith("http") ? url : `${base}/${url.replace(/^\/+/, "")}`;
   const headers = new Headers(headersInit);
+
   if (_authTokenGetter) {
     const token = await _authTokenGetter();
     if (token) {
       headers.set("apikey", token);
       headers.set("Authorization", `Bearer ${token}`);
     }
+  }
+
+  // FIX: Force Supabase to return a single object, not an array
+  if (isSummary) {
+    headers.set("Accept", "application/vnd.pgrst.object+json");
   }
 
   const response = await fetch(finalUrl, { ...init, method, headers });
