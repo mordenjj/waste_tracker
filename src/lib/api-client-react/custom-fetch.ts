@@ -30,35 +30,30 @@ export async function customFetch<T = unknown>(
   const { headers: headersInit, ...init } = options;
   const method = init.method?.toUpperCase() || "GET";
 
-  // 1. Path Redirection
+  // 1. Path Redirection for Analytics
   const isSummary = url.includes("/waste-events/summary");
-  const isHistory = url.includes("/waste-events") && !isSummary;
-  
   if (isSummary) {
     url = url.replace("/waste-events/summary", "/waste_events_summary");
   }
 
-  // 2. Date Parameter Mapping (Fixes the 400 error)
+  // 2. Logic Fix: Translate 'from'/'to' to 'recordedAt' filters
   if (method === "GET" && url.includes("?")) {
     const [path, query] = url.split("?");
-    const oldParams = new URLSearchParams(query);
-    const newParams = new URLSearchParams();
+    const params = new URLSearchParams(query);
+    const translated = new URLSearchParams();
 
-    oldParams.forEach((value, key) => {
-      if (value.includes(".")) {
-        newParams.append(key, value);
-      } else if (key === 'from') {
-        newParams.append('recordedAt', `gte.${value}`);
-      } else if (key === 'to') {
-        newParams.append('recordedAt', `lte.${value}`);
-      } else {
-        newParams.append(key, `eq.${value}`);
-      }
+    params.forEach((val, key) => {
+      const value = String(val);
+      if (value.includes(".")) { translated.append(key, value); return; }
+      
+      if (key === 'from') translated.append('recordedAt', `gte.${value}`);
+      else if (key === 'to') translated.append('recordedAt', `lte.${value}`);
+      else translated.append(key, `eq.${value}`);
     });
-    url = `${path}?${newParams.toString()}`;
+    url = `${path}?${translated.toString()}`;
   }
 
-  // 3. Final URL construction
+  // 3. Construct Final URL
   const base = (_baseUrl || "").replace(/\/+$/, "");
   const cleanPath = url.startsWith("/") ? url : `/${url}`;
   const finalUrl = url.startsWith("http") ? url : `${base}${cleanPath}`;
@@ -73,7 +68,7 @@ export async function customFetch<T = unknown>(
     }
   }
 
-  // Force object response for analytics
+  // Force single object return for the summary view
   if (isSummary) {
     headers.set("Accept", "application/vnd.pgrst.object+json");
   }
