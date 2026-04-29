@@ -17,76 +17,57 @@ export function setAuthTokenGetter(getter: AuthTokenGetter | null): void {
   _authTokenGetter = getter;
 }
 
-function resolveUrl(input: RequestInfo | URL): string {
-  if (typeof input === "string") return input;
-  if (input instanceof URL) return input.toString();
-  return input.url;
-}
-
-function applyBaseUrl(input: string): string {
-  if (!_baseUrl || input.startsWith("http")) return input;
-  return `${_baseUrl.replace(/\/+$/, "")}/${input.replace(/^\/+/, "")}`;
-}
-
 export class ApiError<T = unknown> extends Error {
   readonly status: number;
   readonly data: T | null;
-  constructor(response: Response, data: T | null, requestInfo: { method: string; url: string }) {
-    super(`HTTP ${response.status}: ${requestInfo.method} ${requestInfo.url}`);
+  constructor(response: Response, data: T | null, url: string) {
+    super(`HTTP ${response.status} at ${url}`);
     this.status = response.status;
     this.data = data;
   }
-}
-
-async function parseBody(response: Response): Promise<unknown> {
-  const text = await response.text();
-  if (!text) return null;
-  try { return JSON.parse(text); } catch { return text; }
 }
 
 export async function customFetch<T = unknown>(
   input: RequestInfo | URL,
   options: CustomFetchOptions = {},
 ): Promise<T> {
-  let resolvedUrl = resolveUrl(input);
+  // 1. Get the raw URL string
+  let url = typeof input === "string" ? input : (input instanceof URL ? input.toString() : input.url);
   const { responseType: _rt, headers: headersInit, ...init } = options;
   const method = init.method?.toUpperCase() || "GET";
 
-  // 1. Path Interceptor: Route hyphen path to underscore view for Analytics
-  if (resolvedUrl.includes("/waste-events/summary")) {
-    resolvedUrl = resolvedUrl.replace("/waste-events/summary", "/waste_events_summary");
+  // 2. TRANSFORM: Redirect and Parameter Mapping
+  // This MUST happen before we join the Base URL
+  if (url.includes("/waste-events/summary")) {
+    url = url.replace("/waste-events/summary", "/waste_events_summary");
   }
 
-  // 2. The Fix: Translate 'from' and 'to' into 'recordedAt' filters
-  if (method === "GET" && resolvedUrl.includes("?")) {
-    const [path, query] = resolvedUrl.split("?");
-    const params = new URLSearchParams(query);
+  if (method === "GET" && url.includes("?")) {
+    const [path, query] = url.split("?");
+    const oldParams = new URLSearchParams(query);
     const newParams = new URLSearchParams();
 
-    params.forEach((value, key) => {
-      // If the value already has a dot (eq., gte.), keep it as is
+    oldParams.forEach((value, key) => {
       if (value.includes(".")) {
         newParams.append(key, value);
-        return;
-      }
-
-      // Map 'from' and 'to' to the database column 'recordedAt'
-      if (key === 'from') {
+      } else if (key === 'from') {
         newParams.append('recordedAt', `gte.${value}`);
       } else if (key === 'to') {
         newParams.append('recordedAt', `lte.${value}`);
       } else {
-        // Default to equality filter for everything else (station, wasteReason)
         newParams.append(key, `eq.${value}`);
       }
     });
-    resolvedUrl = `${path}?${newParams.toString()}`;
+    url = `${path}?${newParams.toString()}`;
   }
 
-  const finalUrl = applyBaseUrl(resolvedUrl);
-  const headers = new Headers(headersInit);
+  // 3. Construct Final Absolute URL
+  const base = (_baseUrl || "").replace(/\/+$/, "");
+  const cleanPath = url.startsWith("/") ? url : `/${url}`;
+  const finalUrl = url.startsWith("http") ? url : `${base}${cleanPath}`;
 
-  // 3. Auth: Supabase requires both 'apikey' and 'Authorization'
+  // 4. Headers & Auth
+  const headers = new Headers(headersInit);
   if (_authTokenGetter) {
     const token = await _authTokenGetter();
     if (token) {
@@ -95,13 +76,16 @@ export async function customFetch<T = unknown>(
     }
   }
 
+  // 5. Execute
   const response = await fetch(finalUrl, { ...init, method, headers });
 
-  // 4. Handle 201 Created and 200 OK as success
+  // 6. Parse and Return
+  const text = await response.text();
+  const data = text ? JSON.parse(text) : null;
+
   if (!response.ok) {
-    const errorData = await parseBody(response);
-    throw new ApiError(response, errorData as T, { method, url: resolvedUrl });
+    throw new ApiError(response, data, url);
   }
 
-  return (await parseBody(response)) as T;
+  return data as T;
 }
