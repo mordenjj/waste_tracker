@@ -30,42 +30,38 @@ export async function customFetch<T = unknown>(
   const { headers: headersInit, ...init } = options;
   const method = init.method?.toUpperCase() || "GET";
 
-  // 1. Path Redirection for Analytics
+  // 1. Path Redirection
   const isSummary = url.includes("/waste-events/summary");
+  const isHistory = url.includes("/waste-events") && !isSummary;
+  
   if (isSummary) {
     url = url.replace("/waste-events/summary", "/waste_events_summary");
   }
 
-  // 2. Date & Parameter Translation
+  // 2. Date Parameter Mapping (Fixes the 400 error)
   if (method === "GET" && url.includes("?")) {
     const [path, query] = url.split("?");
-    const params = new URLSearchParams(query);
-    const translated = new URLSearchParams();
+    const oldParams = new URLSearchParams(query);
+    const newParams = new URLSearchParams();
 
-    params.forEach((val, key) => {
-      const value = String(val);
-      // Skip if already translated (contains a dot like gte. or eq.)
-      if (value.includes(".")) { 
-        translated.append(key, value); 
-        return; 
-      }
-      
-      // Map frontend date keys to backend column 'recordedAt' with proper operators
-      if (key === 'from') {
-        translated.append('recordedAt', `gte.${value}`);
+    oldParams.forEach((value, key) => {
+      if (value.includes(".")) {
+        newParams.append(key, value);
+      } else if (key === 'from') {
+        newParams.append('recordedAt', `gte.${value}`);
       } else if (key === 'to') {
-        translated.append('recordedAt', `lte.${value}`);
+        newParams.append('recordedAt', `lte.${value}`);
       } else {
-        // Map other filters (station, reason) to standard equality
-        translated.append(key, `eq.${value}`);
+        newParams.append(key, `eq.${value}`);
       }
     });
-    url = `${path}?${translated.toString()}`;
+    url = `${path}?${newParams.toString()}`;
   }
 
-  // 3. Final URL Construction
+  // 3. Final URL construction
   const base = (_baseUrl || "").replace(/\/+$/, "");
-  const finalUrl = url.startsWith("http") ? url : `${base}/${url.replace(/^\/+/, "")}`;
+  const cleanPath = url.startsWith("/") ? url : `/${url}`;
+  const finalUrl = url.startsWith("http") ? url : `${base}${cleanPath}`;
 
   // 4. Headers & Auth
   const headers = new Headers(headersInit);
@@ -77,7 +73,7 @@ export async function customFetch<T = unknown>(
     }
   }
 
-  // Tell Supabase to return an object instead of an array for summary requests
+  // Force object response for analytics
   if (isSummary) {
     headers.set("Accept", "application/vnd.pgrst.object+json");
   }
