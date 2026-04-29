@@ -253,7 +253,7 @@ export async function customFetch<T = unknown>(
     const params = new URLSearchParams(query);
     
     params.forEach((value, key) => {
-      // Skip if already contains a PostgREST operator
+      // Skip if already contains a PostgREST operator (contains a dot)
       if (typeof value === 'string' && value.includes(".")) return;
       
       // Map 'from/to' to specific Supabase operators
@@ -286,18 +286,19 @@ export async function customFetch<T = unknown>(
     headers.set("accept", DEFAULT_JSON_ACCEPT);
   }
 
-  if (_authTokenGetter && !headers.has("authorization")) {
+  // 6. Auth and Supabase specific headers
+  if (_authTokenGetter) {
     const token = await _authTokenGetter();
     if (token) {
-      // Supabase requires both Authorization and apikey headers
-      headers.set("authorization", `Bearer ${token}`);
+      // SUPABASE REQUIRES BOTH OF THESE:
       headers.set("apikey", token);
+      headers.set("Authorization", `Bearer ${token}`);
     }
   }
-
+  
   const requestInfo = { method, url: resolvedUrl };
 
-  // 6. Execute Fetch
+  // 7. Execute Fetch
   const response = await fetch(finalInput, { ...init, method, headers });
 
   if (!response.ok) {
