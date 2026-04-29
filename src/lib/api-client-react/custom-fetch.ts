@@ -36,7 +36,7 @@ export async function customFetch<T = unknown>(
     url = url.replace("/waste-events/summary", "/waste_events_summary");
   }
 
-  // 2. Translate filters from frontend (from/to) to Supabase (recordedAt + operators)
+  // 2. Date & Parameter Translation
   if (method === "GET" && url.includes("?")) {
     const [path, query] = url.split("?");
     const params = new URLSearchParams(query);
@@ -44,18 +44,31 @@ export async function customFetch<T = unknown>(
 
     params.forEach((val, key) => {
       const value = String(val);
-      if (value.includes(".")) { translated.append(key, value); return; }
+      // Skip if already translated (contains a dot like gte. or eq.)
+      if (value.includes(".")) { 
+        translated.append(key, value); 
+        return; 
+      }
       
-      if (key === 'from') translated.append('recordedAt', `gte.${value}`);
-      else if (key === 'to') translated.append('recordedAt', `lte.${value}`);
-      else translated.append(key, `eq.${value}`);
+      // Map frontend date keys to backend column 'recordedAt' with proper operators
+      if (key === 'from') {
+        translated.append('recordedAt', `gte.${value}`);
+      } else if (key === 'to') {
+        translated.append('recordedAt', `lte.${value}`);
+      } else {
+        // Map other filters (station, reason) to standard equality
+        translated.append(key, `eq.${value}`);
+      }
     });
     url = `${path}?${translated.toString()}`;
   }
 
-  const finalUrl = url.startsWith("http") ? url : `${(_baseUrl || "").replace(/\/+$/, "")}/${url.replace(/^\/+/, "")}`;
-  const headers = new Headers(headersInit);
+  // 3. Final URL Construction
+  const base = (_baseUrl || "").replace(/\/+$/, "");
+  const finalUrl = url.startsWith("http") ? url : `${base}/${url.replace(/^\/+/, "")}`;
 
+  // 4. Headers & Auth
+  const headers = new Headers(headersInit);
   if (_authTokenGetter) {
     const token = await _authTokenGetter();
     if (token) {
