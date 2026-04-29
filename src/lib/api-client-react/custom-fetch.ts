@@ -1,27 +1,3 @@
-export type CustomFetchOptions = RequestInit & {
-  responseType?: "json" | "text" | "blob" | "auto";
-};
-
-export type ErrorType<T = unknown> = ApiError<T>;
-export type BodyType<T> = T;
-export type AuthTokenGetter = () => Promise<string | null> | string | null;
-
-let _baseUrl: string | null = null;
-let _authTokenGetter: AuthTokenGetter | null = null;
-
-export function setBaseUrl(url: string | null): void { _baseUrl = url; }
-export function setAuthTokenGetter(getter: AuthTokenGetter | null): void { _authTokenGetter = getter; }
-
-export class ApiError<T = unknown> extends Error {
-  readonly status: number;
-  readonly data: T | null;
-  constructor(response: Response, data: T | null, url: string) {
-    super(`HTTP ${response.status} at ${url}`);
-    this.status = response.status;
-    this.data = data;
-  }
-}
-
 export async function customFetch<T = unknown>(
   input: RequestInfo | URL,
   options: CustomFetchOptions = {},
@@ -30,12 +6,13 @@ export async function customFetch<T = unknown>(
   const { headers: headersInit, ...init } = options;
   const method = init.method?.toUpperCase() || "GET";
 
-  // 1. Path & Parameter Transformation
+  // 1. Redirect Path
   const isSummary = urlStr.includes("/waste-events/summary");
   if (isSummary) {
     urlStr = urlStr.replace("/waste-events/summary", "/waste_events_summary");
   }
 
+  // 2. Translate Dates (This is what should be stripping 'from' and 'to')
   if (method === "GET" && urlStr.includes("?")) {
     const [path, query] = urlStr.split("?");
     const oldParams = new URLSearchParams(query);
@@ -55,13 +32,10 @@ export async function customFetch<T = unknown>(
     urlStr = `${path}?${newParams.toString()}`;
   }
 
-  // 2. Build Final Absolute URL
   const base = (_baseUrl || "").replace(/\/+$/, "");
-  const cleanPath = urlStr.startsWith("/") ? urlStr : `/${urlStr}`;
-  const finalUrl = urlStr.startsWith("http") ? urlStr : `${base}${cleanPath}`;
-
-  // 3. Set Headers
+  const finalUrl = urlStr.startsWith("http") ? urlStr : `${base}/${urlStr.replace(/^\/+/, "")}`;
   const headers = new Headers(headersInit);
+
   if (_authTokenGetter) {
     const token = await _authTokenGetter();
     if (token) {
@@ -70,7 +44,6 @@ export async function customFetch<T = unknown>(
     }
   }
 
-  // Mandatory header for single-row View returns
   if (isSummary) {
     headers.set("Accept", "application/vnd.pgrst.object+json");
   }
