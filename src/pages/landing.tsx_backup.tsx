@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { ClipboardList, Clock, BarChart3, Zap, Shield, Smartphone, GraduationCap } from "lucide-react";
+import { ClipboardList, Clock, BarChart3, Zap, Shield, Smartphone } from "lucide-react";
 
 const STATIONS = ["Sauté", "Salad", "Prep", "Fry", "Flat"];
 const REASONS = ["Burnt food", "Dropped", "Prep mistake", "Expired"];
@@ -51,7 +51,7 @@ export default function LandingPage() {
           <span className="font-mono font-bold text-lg tracking-tight">WASTE_TRACKER</span>
           <Link
             href="/app"
-            className="font-mono font-bold text-sm px-4 py-2 bg-primary text-primary-foreground rounded-md border border-border active:scale-95 transition-transform inline-block focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+            className="font-mono font-bold text-sm px-4 py-2 bg-primary text-primary-foreground rounded-md border border-border active:scale-95 transition-transform inline-block"
           >
             OPEN APP
           </Link>
@@ -71,7 +71,7 @@ export default function LandingPage() {
           </p>
           <Link
             href="/app"
-            className="font-mono font-bold text-xl px-10 py-5 bg-primary text-primary-foreground rounded-md border border-border hover:opacity-90 active:scale-95 transition-all shadow-lg inline-block focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+            className="font-mono font-bold text-xl px-10 py-5 bg-primary text-primary-foreground rounded-md border border-border hover:opacity-90 active:scale-95 transition-all shadow-lg inline-block"
           >
             LAUNCH APP
           </Link>
@@ -133,34 +133,7 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* Student Project Section merged from Replit */}
-        <section aria-labelledby="about-heading" className="border-t border-border bg-card">
-          <div className="max-w-4xl mx-auto px-6 py-16">
-            <div className="flex items-center justify-center gap-3 mb-6">
-              <GraduationCap className="h-6 w-6 text-primary flex-none" aria-hidden="true" />
-              <h2 id="about-heading" className="font-mono font-bold text-2xl">
-                ABOUT THIS PROJECT
-              </h2>
-            </div>
-            <div className="max-w-2xl mx-auto text-center space-y-4">
-              <p className="text-foreground leading-relaxed">
-                Waste Tracker was built by <strong>Josh Morden</strong>, a student at the{" "}
-                <strong>University of Iowa</strong>, as a course project for the{" "}
-                <strong>Digital Product Management</strong> program. The goal was to design and
-                ship a real, deployable digital product from the ground up &mdash; identifying a
-                genuine pain point in restaurant kitchen operations and delivering a focused tool
-                to address it.
-              </p>
-              <p className="text-muted-foreground text-sm leading-relaxed">
-                This project covers end-to-end product development: from user research and
-                requirements definition through backend API design, relational database
-                integration, and cloud deployment on Microsoft Azure.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        <section aria-labelledby="cta-heading" className="border-t border-border">
+        <section aria-labelledby="cta-heading" className="border-t border-border bg-card">
           <div className="max-w-4xl mx-auto px-6 py-16 text-center">
             <h2 id="cta-heading" className="font-mono font-bold text-2xl mb-4">
               READY TO REDUCE WASTE?
@@ -170,7 +143,7 @@ export default function LandingPage() {
             </p>
             <Link
               href="/app"
-              className="font-mono font-bold text-lg px-8 py-4 bg-primary text-primary-foreground rounded-md border border-border hover:opacity-90 active:scale-95 transition-all shadow-md inline-block focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+              className="font-mono font-bold text-lg px-8 py-4 bg-primary text-primary-foreground rounded-md border border-border hover:opacity-90 active:scale-95 transition-all shadow-md inline-block"
             >
               LAUNCH APP
             </Link>
@@ -178,31 +151,12 @@ export default function LandingPage() {
         </section>
       </main>
 
-      <footer className="border-t border-border py-8">
-        <div className="max-w-4xl mx-auto px-6">
-          <nav aria-label="Legal pages" className="flex flex-wrap gap-x-6 gap-y-2 justify-center mb-4">
-            <Link
-              href="/cookie-policy"
-              className="font-mono text-xs text-foreground underline underline-offset-4 hover:opacity-70 transition-opacity focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring rounded-sm"
-            >
-              Cookie Policy
-            </Link>
-            <Link
-              href="/privacy-policy"
-              className="font-mono text-xs text-foreground underline underline-offset-4 hover:opacity-70 transition-opacity focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring rounded-sm"
-            >
-              Privacy Policy
-            </Link>
-            <Link
-              href="/terms"
-              className="font-mono text-xs text-foreground underline underline-offset-4 hover:opacity-70 transition-opacity focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring rounded-sm"
-            >
-              Terms &amp; Conditions
-            </Link>
-          </nav>
-          <p className="font-mono text-xs text-muted-foreground text-center">
-            WASTE_TRACKER &mdash; a student project by Josh Morden, University of Iowa
-          </p>
+      <footer className="border-t border-border py-6">
+        <div className="max-w-4xl mx-auto px-6 flex items-center justify-between">
+          <span className="font-mono text-xs text-muted-foreground">WASTE_TRACKER</span>
+          <span className="font-mono text-xs text-muted-foreground">
+            Backed by PostgreSQL · Portable to Azure
+          </span>
         </div>
       </footer>
     </div>
