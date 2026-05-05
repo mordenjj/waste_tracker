@@ -1,18 +1,3 @@
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-NLNXL6X0GX"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-NLNXL6X0GX');
-</script>
-
-
-
-
-
-import { useState, useMemo } from "react";
 import { useGetWasteEventsSummary, getGetWasteEventsSummaryQueryKey } from "../lib/api-client-react";
 import { Layout } from "@/components/layout";
 import {
